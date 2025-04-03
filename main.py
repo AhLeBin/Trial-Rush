@@ -21,7 +21,7 @@ BLEU = (0, 0, 255)
 background = pygame.image.load('fond.png')
 
 # Chargement et redimensionnement de la texture roche (zoomée)
-original_texture = pygame.image.load('roche.jpg')
+original_texture = pygame.image.load('roche.jpg')  # Nom du fichier mis à jour
 texture_size = 50  # Taille plus grande pour éviter une répétition excessive
 rock_texture = pygame.transform.scale(original_texture, (texture_size, texture_size))
 
@@ -57,12 +57,10 @@ class Block:
                 else:
                     screen.blit(rock_texture, (self.x + i, self.y + j))
 
-
 def draw_text(text, x, y, color, size=24):
     font = pygame.font.Font("Police.ttf", 17)
     label = font.render(text, True, color)
     screen.blit(label, (x, y))
-
 
 def get_progress_color(progress, target):
     if progress < target / 100:
@@ -71,16 +69,13 @@ def get_progress_color(progress, target):
         intensite = min(255, int((progress - target / 100) * 255 * 2))
         return (255, 255 - intensite, 0)
 
-
 def draw_progress_bar(progress, target):
     pygame.draw.rect(screen, NOIRE, (50, 100, 500, 30))
     pygame.draw.rect(screen, get_progress_color(progress, target), (50, 100, 500 * progress, 30))
     pygame.draw.line(screen, BLEU, (50 + 500 * (target / 100), 100), (50 + 500 * (target / 100), 130), 5)
 
-
 def start_new_game():
     return random.randint(20, 80)
-
 
 running = True
 blocks = [Block(start_new_game(), 400)]
@@ -117,6 +112,7 @@ while running:
         if abs(progress * 100 - blocks[-1].target) <= 1.5:
             draw_text("VALIDE!", 200, 200, VERT)
             score += 1
+            progress = 0.0  # 🔥 Réinitialisation de la barre de progression
             pygame.display.flip()
             time.sleep(0.5)
             blocks[-1].moving_out = True
@@ -132,6 +128,7 @@ while running:
             time.sleep(2)
             blocks = [Block(start_new_game(), 400)]
             x_background = 0
+            progress = 0.0  # 🔥 Réinitialisation aussi en cas d'échec
 
         confirmation = False
 
