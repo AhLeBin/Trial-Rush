@@ -13,16 +13,18 @@ pygame.display.set_caption("Barre et Défilement Fond")
 
 # Couleurs
 NOIRE = (0, 0, 0)
+BLANC = (255, 255, 255)
 VERT = (0, 255, 0)
 ROUGE = (255, 0, 0)
 BLEU = (0, 0, 255)
+TRANSPARENT_NOIR = (0, 0, 0, 150)  # Noir semi-transparent
 
 # Chargement des images
 background = pygame.image.load('fond.png')
 
 # Chargement et redimensionnement de la texture roche (zoomée)
-original_texture = pygame.image.load('roche.jpg')  # Nom du fichier mis à jour
-texture_size = 50  # Taille plus grande pour éviter une répétition excessive
+original_texture = pygame.image.load('roche.jpg')
+texture_size = 50
 rock_texture = pygame.transform.scale(original_texture, (texture_size, texture_size))
 
 x_background = 0
@@ -47,31 +49,31 @@ class Block:
             self.x -= speed
 
     def draw(self):
-        """Dessine la texture sans la déformer, en coupant proprement la dernière ligne"""
-        for i in range(0, self.width, texture_size):  # Répétition en largeur
-            for j in range(0, self.height, texture_size):  # Répétition en hauteur
-                if j + texture_size > self.height:  # Si on dépasse le bloc en bas
-                    height_remainder = self.height - j  # Hauteur restante exacte
+        for i in range(0, self.width, texture_size):
+            for j in range(0, self.height, texture_size):
+                if j + texture_size > self.height:
+                    height_remainder = self.height - j
                     cropped_texture = rock_texture.subsurface((0, 0, texture_size, height_remainder))
                     screen.blit(cropped_texture, (self.x + i, self.y + j))
                 else:
                     screen.blit(rock_texture, (self.x + i, self.y + j))
 
+# Fonction pour dessiner un rectangle semi-transparent
+def draw_transparent_rect(x, y, width, height, color):
+    overlay = pygame.Surface((width, height), pygame.SRCALPHA)
+    overlay.fill(color)
+    screen.blit(overlay, (x, y))
+
+# Fonction pour afficher le texte
 def draw_text(text, x, y, color, size=24):
     font = pygame.font.Font("Police.ttf", 17)
     label = font.render(text, True, color)
     screen.blit(label, (x, y))
 
-def get_progress_color(progress, target):
-    if progress < target / 100:
-        return VERT
-    else:
-        intensite = min(255, int((progress - target / 100) * 255 * 2))
-        return (255, 255 - intensite, 0)
-
+# Fonction pour la barre de progression
 def draw_progress_bar(progress, target):
-    pygame.draw.rect(screen, NOIRE, (50, 100, 500, 30))
-    pygame.draw.rect(screen, get_progress_color(progress, target), (50, 100, 500 * progress, 30))
+    draw_transparent_rect(45, 95, 510, 40, TRANSPARENT_NOIR)  # Fond noir transparent
+    pygame.draw.rect(screen, VERT, (50, 100, 500 * progress, 30))
     pygame.draw.line(screen, BLEU, (50 + 500 * (target / 100), 100), (50 + 500 * (target / 100), 130), 5)
 
 def start_new_game():
@@ -104,15 +106,16 @@ while running:
     progress = max(0.0, min(1.0, progress))
 
     draw_progress_bar(progress, blocks[-1].target)
-    draw_text(f"OBJECTIF: {blocks[-1].target}", 20, 20, NOIRE)
-    draw_text(f"PROGRESSION: {progress * 100:.1f}", 20, 50, NOIRE)
-    draw_text(f"SCORE: {score}", 430, 20, NOIRE)
+    draw_transparent_rect(15, 15, 570, 77, TRANSPARENT_NOIR)  # Fond pour le texte
+    draw_text(f"OBJECTIF: {blocks[-1].target}", 20, 20, BLANC)
+    draw_text(f"PROGRESSION: {progress * 100:.1f}", 20, 50, BLANC)
+    draw_text(f"SCORE: {score}", 430, 20, BLANC)
 
     if confirmation:
         if abs(progress * 100 - blocks[-1].target) <= 1.5:
             draw_text("VALIDE!", 200, 200, VERT)
             score += 1
-            progress = 0.0  # 🔥 Réinitialisation de la barre de progression
+            progress = 0.0
             pygame.display.flip()
             time.sleep(0.5)
             blocks[-1].moving_out = True
@@ -128,8 +131,7 @@ while running:
             time.sleep(2)
             blocks = [Block(start_new_game(), 400)]
             x_background = 0
-            progress = 0.0  # 🔥 Réinitialisation aussi en cas d'échec
-
+            progress = 0.0
         confirmation = False
 
     if scrolling:
