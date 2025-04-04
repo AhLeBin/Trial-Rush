@@ -1,6 +1,7 @@
 import pygame
 import random
 import time
+from block import Block  # Import de la classe Block
 
 # Initialisation de pygame
 pygame.init()
@@ -24,41 +25,8 @@ background = pygame.image.load('fond.png')
 original_trial = pygame.image.load('trial.png')
 trial_texture = pygame.transform.scale(original_trial, (100, 100))
 
-# Chargement et redimensionnement de la texture roche (zoomée)
-original_texture = pygame.image.load('roche.jpg')
-texture_size = 50
-rock_texture = pygame.transform.scale(original_texture, (texture_size, texture_size))
-
 x_background = 0
 score = 0
-
-class Block:
-    def __init__(self, target, x_pos=400):
-        self.target = target
-        self.width = 100
-        self.height = target * 2
-        self.y = screen_height - self.height - 19
-        self.x = x_pos
-        self.moving_out = False
-        self.moving_in = False
-
-    def move_out(self, speed):
-        self.x -= speed
-        return self.x < -self.width
-
-    def move_in(self, speed):
-        if self.x > 400:
-            self.x -= speed
-
-    def draw(self):
-        for i in range(0, self.width, texture_size):
-            for j in range(0, self.height, texture_size):
-                if j + texture_size > self.height:
-                    height_remainder = self.height - j
-                    cropped_texture = rock_texture.subsurface((0, 0, texture_size, height_remainder))
-                    screen.blit(cropped_texture, (self.x + i, self.y + j))
-                else:
-                    screen.blit(rock_texture, (self.x + i, self.y + j))
 
 # Fonction pour dessiner un rectangle semi-transparent
 def draw_transparent_rect(x, y, width, height, color):
@@ -93,7 +61,7 @@ scroll_duration = 3.0
 while running:
     screen.fill(NOIRE)
     screen.blit(background, (x_background, 0))
-    screen.blit(trial_texture, (100, screen_height - 119))
+    screen.blit(trial_texture, (200, screen_height - 119))
     screen.blit(background, (x_background + background.get_width(), 0))
 
     for event in pygame.event.get():
@@ -154,7 +122,7 @@ while running:
     for block in blocks[:]:
         if block.moving_out and block.x < -block.width:
             blocks.remove(block)
-        block.draw()
+        block.draw(screen)
 
     pygame.display.flip()
     pygame.time.Clock().tick(60)
