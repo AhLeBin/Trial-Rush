@@ -21,6 +21,8 @@ TRANSPARENT_NOIR = (0, 0, 0, 150)  # Noir semi-transparent
 
 # Chargement des images
 background = pygame.image.load('fond.png')
+original_trial = pygame.image.load('trial.png')
+trial_texture = pygame.transform.scale(original_trial, (100, 100))
 
 # Chargement et redimensionnement de la texture roche (zoomée)
 original_texture = pygame.image.load('roche.jpg')
@@ -91,6 +93,7 @@ scroll_duration = 3.0
 while running:
     screen.fill(NOIRE)
     screen.blit(background, (x_background, 0))
+    screen.blit(trial_texture, (100, screen_height - 119))
     screen.blit(background, (x_background + background.get_width(), 0))
 
     for event in pygame.event.get():
