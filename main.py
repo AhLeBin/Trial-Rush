@@ -2,152 +2,162 @@ import pygame
 import random
 import time
 import sqlite3
-from block import Block
+from block import Bloc
 from trial import Trial
 
-# Initialisation
+# Initialisation de Pygame
 pygame.init()
 
-#base de donnée
-conn = sqlite3.connect('data.db')
-cursor = conn.cursor()
+# Connexion à la base de données SQLite
+connexion = sqlite3.connect('data.db')
+curseur = connexion.cursor()
 
-# Fenêtre
-screen_width = 600
-screen_height = 400
-screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Barre et Défilement Fond")
+# Paramètres de la fenêtre
+longueur_fenetre = 600
+largeur_fenetre = 400
+fenetre = pygame.display.set_mode((longueur_fenetre, largeur_fenetre))
+pygame.display.set_caption("Trial Rush") # Nom de la fenêtre
 
-# Couleurs
+# Définition des couleurs
 NOIRE = (0, 0, 0)
 BLANC = (255, 255, 255)
 VERT = (0, 255, 0)
 ROUGE = (255, 0, 0)
 BLEU = (0, 0, 255)
-TRANSPARENT_NOIR = (0, 0, 0, 150)
+TRANSPARENT_NOIR = (0, 0, 0, 150) # Noir avec une certaine transparence
 
-# Fond & Trialiste
-background = pygame.image.load('fond.png')
-trial_texture = pygame.transform.scale(pygame.image.load('trial.png'), (100, 100))
-trial = Trial(screen_height - 119, trial_texture)
+# Chargement de l'image de fond
+fond = pygame.image.load('fond.png')
+
+# Chargement de l'image de trial et mise à la bonne taille
+trial_texture = pygame.transform.scale(pygame.image.load('trial.png'), (100, 100)) 
+trial = Trial(largeur_fenetre - 119, trial_texture) # Liaison avec la classe Trial
 
 # Variables principales
-x_background = 0
-score = 0
-progress = 0.0
-confirmation = False
-scrolling = False
-scrolling_timer = 0
-scroll_speed = 4
-scroll_duration = 3.0
+x_fond = 0  # Position du fond pour le défilement
+score = 0  # Score initial
+progression = 0.0  # Progression initiale
+confirmation = False  # Variable pour valider la progression
+animation = False  # Variable pour gérer l'animation
+animation_timer = 0  # Timer pour l'animation
+vitesse_animation = 4  # Vitesse de l'animation
+duree_animation = 3.0  # Durée de l'animation
 
-blocks = [Block(random.randint(20, 80), 400)]
+# Liste des blocs (initialisation avec un bloc de taille aléatoire)
+blocs = [Bloc(random.randint(20, 80), 400)]
 
-# Fonctions utilitaires
-def draw_transparent_rect(x, y, width, height, color):
-    overlay = pygame.Surface((width, height), pygame.SRCALPHA)
-    overlay.fill(color)
-    screen.blit(overlay, (x, y))
+# Fonction pour dessiner un fond transparent (pour l'ui)
+def dessiner_fond_transparent(x, y, longeure, hauteure, couleur):
+    fond_transparent = pygame.Surface((longeure, hauteure), pygame.SRCALPHA) # Crée une surface avec transparence
+    fond_transparent.fill(couleur)
+    fenetre.blit(fond_transparent, (x, y))
 
-def draw_text(text, x, y, color, size=24):
-    font = pygame.font.Font("Police.ttf", 17)
-    label = font.render(text, True, color)
-    screen.blit(label, (x, y))
+# Fonction pour dessiner du texte à l'écran
+def dessiner_texte(texte, x, y, couleure, size=24):
+    police = pygame.font.Font("Police.ttf", 17)  # Police utilisée
+    contenu = police.render(texte, True, couleure)  # Création du texte
+    fenetre.blit(contenu, (x, y))  # Affichage du texte à la position (x, y)
 
-def draw_progress_bar(progress, target):
-    draw_transparent_rect(45, 95, 510, 40, TRANSPARENT_NOIR)
-    pygame.draw.rect(screen, VERT, (50, 100, 500 * progress, 30))
-    pygame.draw.line(screen, BLEU, (50 + 500 * (target / 100), 100), (50 + 500 * (target / 100), 130), 5)
+# Fonction pour dessiner la barre de progression
+def dessiner_barre_progression(progression, objectif):
+    dessiner_fond_transparent(45, 95, 510, 40, TRANSPARENT_NOIR)  # Dessiner le fond de la barre de progression
+    pygame.draw.rect(fenetre, VERT, (50, 100, 500 * progression, 30))  # Dessiner la barre verte de progression
+    pygame.draw.line(fenetre, BLEU, (50 + 500 * (objectif / 100), 100), (50 + 500 * (objectif / 100), 130), 5)  # Indicateur de l'objectif
 
-# Boucle principale
+# Boucle principale du jeu
 running = True
 while running:
-    screen.fill(NOIRE)
-    screen.blit(background, (x_background, 0))
-    screen.blit(background, (x_background + background.get_width(), 0))
+    fenetre.fill(NOIRE)  # Remplir l'écran avec la couleur noire
+    fenetre.blit(fond, (x_fond, 0))  # Afficher le fond à la position x_fond
+    fenetre.blit(fond, (x_fond + fond.get_width(), 0))  # Afficher une seconde image du fond pour créer un défilement
 
+    # Gestion des événements
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
+            running = False  # Quitter le jeu si la fenêtre est fermée
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
-                confirmation = True
+                confirmation = True  # Valider la progression lorsque la touche "Entrée" est appuyée
             if event.key == pygame.K_SPACE:
-                progress += 0.02
+                progression += 0.02  # Augmenter la progression lorsque la barre d'espace est appuyée
 
-    # Progression
-    progress -= 0.001
-    progress = max(0.0, min(1.0, progress))
+    # Mettre à jour la progression (réduction progressive)
+    progression -= 0.001
+    progression = max(0.0, min(1.0, progression))  # Assurer que la progression est entre 0 et 1
 
-    # Affichage de l'UI
-    draw_progress_bar(progress, blocks[-1].target)
-    draw_transparent_rect(15, 15, 570, 77, TRANSPARENT_NOIR)
-    draw_text(f"OBJECTIF: {blocks[-1].target}", 20, 20, BLANC)
-    draw_text(f"PROGRESSION: {progress * 100:.1f}", 20, 50, BLANC)
-    draw_text(f"SCORE: {score}", 430, 20, BLANC)
+    # Affichage de l'interface utilisateur
+    dessiner_barre_progression(progression, blocs[-1].objectif)
+    dessiner_fond_transparent(15, 15, 570, 77, TRANSPARENT_NOIR)
+    dessiner_texte(f"OBJECTIF: {blocs[-1].objectif}", 20, 20, BLANC)
+    dessiner_texte(f"PROGRESSION: {progression * 100:.1f}", 20, 50, BLANC)
+    dessiner_texte(f"SCORE: {score}", 430, 20, BLANC)
 
-    # Validation
+    # Validation de la progression
     if confirmation:
-        if abs(progress * 100 - blocks[-1].target) <= 1.5:
-            draw_text("VALIDE!", 200, 200, VERT)
-            score += 1
-            progress = 0.0
+        if abs(progression * 100 - blocs[-1].objectif) <= 1.5:  # Vérifie si la différence entre la progression et l'objectif est inférieure ou égale à 1.5
+            dessiner_texte("VALIDE!", 200, 200, VERT)  # Affiche "VALIDE!" si la progression est proche de l'objectif
+            score += 1  # Augmenter le score
+            progression = 0.0  # Réinitialiser la progression de la barre
             pygame.display.flip()
-            time.sleep(0.5)
+            time.sleep(0.5)  # Attendre un peu avant de continuer
 
-            blocks[-1].moving_out = True
-            new_block = Block(random.randint(20, 80), screen_width + 180)
-            new_block.moving_in = True
-            blocks.append(new_block)
+            blocs[-1].sortie = True  # Le bloc actuel sort
+            new_block = Bloc(random.randint(20, 80), longueur_fenetre + 180)  # Créer un nouveau bloc de taille differente
+            new_block.entree = True  # Le nouveau bloc entre dans la fenetre
+            blocs.append(new_block)  # Ajouter le bloc à la liste
 
-            scrolling = True
-            scrolling_timer = time.time()
+            animation = True  # Lancer l'animation
+            animation_timer = time.time()  # Enregistrer le temps de début de l'animation
 
-            # Animation trialiste vers bloc validé
-            trial.start_animation(blocks[-2])
-        else:
-            draw_text("GAME OVER", 200, 200, ROUGE, 50)
+            # Lancer l'animation de transition du trialiste vers le bloc validé
+            trial.depart_animation(blocs[-2])
+
+        else: #si la progression est trop éloignée de l'objectif
+            dessiner_texte("GAME OVER", 200, 200, ROUGE, 50)  # Afficher "GAME OVER"
             pygame.display.flip()
-            score = 0
-            time.sleep(2)
+            score = 0  # Réinitialiser le score
+            time.sleep(2)  # Attendre 2 secondes
 
-            blocks = [Block(random.randint(20, 80), 400)]
-            x_background = 0
-            progress = 0.0
+            # Réinitialiser les blocs et autres variables pour recommencer
+            blocs = [Bloc(random.randint(20, 80), 400)]
+            x_fond = 0
+            progression = 0.0
             trial.y = trial.y_initial
-            trial.anim_state = "idle"
-            trial.target_block = None
+            trial.etat_animation = "inactif"
+            trial.bloc_vise = None
 
-        confirmation = False
+        confirmation = False  # Réinitialiser la confirmation
 
-    # Scroll fond et blocs
-    if scrolling:
-        elapsed_time = time.time() - scrolling_timer
-        if elapsed_time <= scroll_duration:
-            x_background -= scroll_speed
-            if x_background <= -background.get_width():
-                x_background = 0
+    # Défilement du fond et des blocs
+    if animation:
+        elapsed_time = time.time() - animation_timer  # Temps écoulé depuis le début de l'animation
+        if elapsed_time <= duree_animation:  # Si l'animation n'est pas encore terminée
+            x_fond -= vitesse_animation  # Déplacer le fond
+            if x_fond <= -fond.get_width():  # Si le fond est complètement défilé
+                x_fond = 0  # Réinitialiser la position du fond
 
-            for block in blocks:
-                if block.moving_out:
-                    block.move_out(scroll_speed)
-                if block.moving_in:
-                    block.move_in(scroll_speed)
+            for block in blocs:
+                if block.sortie:  # Si l'instruction de sortie est donnée
+                    block.sort(vitesse_animation) # lancer l'annimation de sortie
+                if block.entree:  # Si l'instruction d'entrée est donnée
+                    block.entre(vitesse_animation) #lancer l'annimation d'entrée
         else:
-            scrolling = False
+            animation = False  # Terminer l'animation si la durée est écoulée
 
-    # Animation & affichage trialiste
+    # Mise à jour et affichage du trialiste
     trial.update()
-    trial.draw(screen, 200)
+    trial.dessine(fenetre, 200)
 
     # Affichage des blocs
-    for block in blocks[:]:
-        if block.moving_out and block.x < -block.width:
-            blocks.remove(block)
-        block.draw(screen)
+    for block in blocs[:]:
+        if block.sortie and block.x < -block.largeur:  # Si le bloc sort de l'écran
+            blocs.remove(block)  # Supprimer le bloc
+        block.dessine(fenetre)  # Dessiner le bloc
 
+    # Rafraîchir l'écran
     pygame.display.flip()
-    pygame.time.Clock().tick(60)
+    pygame.time.Clock().tick(60)  # Limiter le nombre de frames par seconde à 60
 
+# Quitter Pygame à la fin du jeu
 pygame.quit()

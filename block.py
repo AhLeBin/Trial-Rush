@@ -1,37 +1,60 @@
 import pygame
 
 # Paramètres de la fenêtre
-screen_height = 400
-texture_size = 50
+largeur_fenetre = 400  # Largeur de la fenêtre de jeu
+taille_texture = 50  # Taille de chaque tuile de texture (ici, chaque "brique" de roche)
 
 # Chargement et redimensionnement de la texture roche
-rock_texture = pygame.image.load('roche.jpg')
-rock_texture = pygame.transform.scale(rock_texture, (texture_size, texture_size))
+texture_roche = pygame.image.load('roche.jpg')  # Chargement de l'image de la texture de roche
+texture_roche = pygame.transform.scale(texture_roche, (taille_texture, taille_texture))  # Redimensionner la texture pour qu'elle ait la taille spécifiée
 
-class Block:
-    def __init__(self, target, x_pos=400):
-        self.target = target
-        self.width = 100
-        self.height = target * 2
-        self.y = screen_height - self.height - 19
-        self.x = x_pos
-        self.moving_out = False
-        self.moving_in = False
+class Bloc:
+    def __init__(self, objectif, x_pos=400):
+        """
+        Initialise un objet Bloc avec un objectif et une position sur l'axe X.
 
-    def move_out(self, speed):
-        self.x -= speed
-        return self.x < -self.width
+        :param objectif: La longueur du bloc est proportionnelle à cet objectif
+        :param x_pos: Position initiale du bloc sur l'axe X (défaut à 400)
+        """
+        self.objectif = objectif  # L'objectif (nombre entre 20 et 80)
+        self.largeur = 100  # Largeur fixe du bloc
+        self.longueur = objectif * 2  # La longueur du bloc est calculée en fonction de l'objectif
+        self.y = largeur_fenetre - self.longueur - 19  # Position verticale du bloc en fonction de la fenêtre
+        self.x = x_pos  # Position horizontale du bloc (par défaut 400)
+        self.sortie = False  # autorisation d'annimation de sortie
+        self.entree = False # autorisation d'annimation d'entrée
 
-    def move_in(self, speed):
-        if self.x > 400:
-            self.x -= speed
+    def sort(self, vitesse):
+        """
+        Gère le déplacement du bloc lorsqu'il sort de la fenêtre.
 
-    def draw(self, screen):
-        for i in range(0, self.width, texture_size):
-            for j in range(0, self.height, texture_size):
-                if j + texture_size > self.height:
-                    height_remainder = self.height - j
-                    cropped_texture = rock_texture.subsurface((0, 0, texture_size, height_remainder))
-                    screen.blit(cropped_texture, (self.x + i, self.y + j))
-                else:
-                    screen.blit(rock_texture, (self.x + i, self.y + j))
+        :param vitesse: La vitesse à laquelle le bloc se déplace
+        :return: True si le bloc a quitté la fenêtre, sinon False
+        """
+        self.x -= vitesse  # Déplacer le bloc vers la gauche (diminue la position X)
+        return self.x < -self.largeur  # Si le bloc dépasse le bord gauche de l'écran, il est considéré comme sorti
+
+    def entre(self, vitesse):
+        """
+        Gère le déplacement du bloc lorsqu'il entre dans la fenêtre.
+
+        :param vitesse: La vitesse à laquelle le bloc se déplace
+        """
+        if self.x > 400:  # Si le bloc est toujours à droite de la fenêtre (au-delà de 400)
+            self.x -= vitesse  # Déplace le bloc vers la gauche (diminue la position X)
+
+    def dessine(self, fenetre):
+        """
+        Dessine le bloc à l'écran en utilisant des textures de roche.
+
+        :param fenetre: La fenêtre sur laquelle dessiner le bloc
+        """
+        # Dessine le bloc en plusieurs petites textures de roche (en fonction de la largeur et de la longueur)
+        for i in range(0, self.largeur, taille_texture):  # Boucle sur la largeur du bloc
+            for j in range(0, self.longueur, taille_texture):  # Boucle sur la longueur du bloc
+                if j + taille_texture > self.longueur:  # Si la texture dépasse la fin du bloc
+                    reste_a_parcourir = self.longueur - j  # Calcule combien il reste à dessiner sur la dernière ligne
+                    texture_rognee = texture_roche.subsurface((0, 0, taille_texture, reste_a_parcourir))  # Récupère la partie restante de la texture
+                    fenetre.blit(texture_rognee, (self.x + i, self.y + j))  # Dessine cette partie de la texture
+                else:  # Si la texture peut être entièrement dessinée
+                    fenetre.blit(texture_roche, (self.x + i, self.y + j))  # Dessine la texture entière
