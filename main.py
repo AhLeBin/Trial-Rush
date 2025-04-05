@@ -1,11 +1,16 @@
 import pygame
 import random
 import time
+import sqlite3
 from block import Block
 from trial import Trial
 
 # Initialisation
 pygame.init()
+
+#base de donnée
+conn = sqlite3.connect('data.db')
+cursor = conn.cursor()
 
 # Fenêtre
 screen_width = 600
