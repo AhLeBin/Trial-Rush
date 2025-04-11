@@ -43,6 +43,10 @@ animation_timer = 0  # Timer pour l'animation
 vitesse_animation = 4  # Vitesse de l'animation
 duree_animation = 3.0  # Durée de l'animation
 
+# Tailles de police
+FONT_LARGE = 40
+FONT_MEDIUM = 30
+
 # Liste des blocs (initialisation avec un bloc de taille aléatoire)
 blocs = [Bloc(random.randint(20, 80), 400)]
 
@@ -139,21 +143,54 @@ while running:
             # Lancer l'animation de transition du trialiste vers le bloc validé
             trial.depart_animation(blocs[-2])
 
-        elif abs(progression * 100 - blocs[-1].objectif) > 1.5: #si la progression est trop inferieur à l'objectif
-            trial_texture = pygame.transform.scale(pygame.image.load('crash.png'), (100, 100))
-            # Passer x_fond à la méthode crash
-            trial.crash(fenetre, 200, fond, blocs, score, x_fond)
-            trial.dessine(fenetre, 320)
-            score = 0
-            time.sleep(2)
+        elif abs(progression * 100 - blocs[-1].objectif) > 1.5:
+            # Sauvegarder la position actuelle du fond
+            current_x_fond = x_fond
 
-            # Réinitialiser les blocs et autres variables pour recommencer
+            # Exécuter l'animation de crash
+            trial.crash(fenetre, 200, fond, blocs, score, current_x_fond)
+
+            # Afficher l'écran de game over par-dessus les autres éléments
+            try:
+                font_large = pygame.font.Font("Police.ttf", 40)
+                font_small = pygame.font.Font("Police.ttf", 10)
+            except:
+                font_large = pygame.font.SysFont("Arial", 40)
+                font_small = pygame.font.SysFont("Arial", 10)
+
+            # Créer un fond semi-transparent pour le message
+            overlay = pygame.Surface((longueur_fenetre, largeur_fenetre), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 150))  # Noir semi-transparent
+            fenetre.blit(overlay, (0, 0))
+
+            # Afficher les textes
+            game_over_text = font_large.render("GAME OVER", True, (255, 0, 0))
+            restart_text = font_small.render("APPUYER SUR UNE TOUCHE POUR RECOMMENCER", True, (255, 255, 255))
+
+            fenetre.blit(game_over_text, (longueur_fenetre//2 - game_over_text.get_width()//2 ,
+                                         largeur_fenetre//2 - 50))
+            fenetre.blit(restart_text, (longueur_fenetre//2 - restart_text.get_width()//2,
+                                       largeur_fenetre//2 + 40))
+
+            pygame.display.flip()
+
+            # Attendre une touche
+            waiting = True
+            while waiting:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+                    if event.type == pygame.KEYDOWN:
+                        waiting = False
+
+            # Réinitialisation du jeu
+            score = 0
             blocs = [Bloc(random.randint(20, 80), 400)]
             progression = 0.0
             trial.y = trial.y_initial
             trial.etat_animation = "inactif"
             trial.bloc_vise = None
-            # Réinitialiser la texture du trial
             trial.texture = pygame.transform.scale(pygame.image.load('trial.png'), (100, 100))
             trial.texture_originale = trial.texture.copy()
 

@@ -158,39 +158,38 @@ class Trial:
     def crash(self, screen, x_depart, background, liste_blocs, manche=0, x_fond=0):
         """
         Animation de crash avec fond et blocs visibles.
-        Le trialiste glisse vers la droite pendant que tout le décor reste affiché.
-        Si c'est la première manche (manche=0), la distance est plus petite.
+        Retourne True pour indiquer qu'un game over a eu lieu.
         """
         clock = pygame.time.Clock()
 
-        # Détermine la distance de déplacement en fonction de la manche
-        distance = 115 if manche == 0 else 146  # 115 pixels pour la première manche, 146 sinon
-        step = 3 if manche == 0 else 5  # Pas plus petit pour la première manche
+        # Distance de déplacement
+        distance = 115 if manche == 0 else 146
+        step = 3 if manche == 0 else 5
 
         for x in range(x_depart, x_depart + distance, step):
-            # Affiche le fond avec la position actuelle
+            # Afficher le fond
             screen.blit(background, (x_fond, 0))
             screen.blit(background, (x_fond + background.get_width(), 0))
 
-            # Dessine tous les blocs
+            # Dessiner les blocs
             for bloc in liste_blocs:
                 bloc.dessine(screen)
 
-            # Dessine le trialiste
+            # Dessiner le trialiste
             screen.blit(self.texture, (x, self.y))
 
-            # Rafraîchit l'écran
             pygame.display.flip()
             clock.tick(60)
 
-        # Après l'animation, basculer sur la texture crash
+        # Mettre à jour la texture crash
         self.texture = pygame.transform.scale(pygame.image.load('crash.png'), (100, 100))
         self.texture_originale = self.texture.copy()
 
-        # Afficher une dernière fois avec la texture crash
+        # Dernier affichage avec tous les éléments
         screen.blit(background, (x_fond, 0))
         screen.blit(background, (x_fond + background.get_width(), 0))
         for bloc in liste_blocs:
             bloc.dessine(screen)
         screen.blit(self.texture, (x_depart + distance, self.y))
-        pygame.display.flip()
+
+        return True  # Toujours un game over
