@@ -64,9 +64,32 @@ def dessiner_texte(texte, x, y, couleure, size=24):
 
 # Fonction pour dessiner la barre de progression
 def dessiner_barre_progression(progression, objectif):
-    dessiner_fond_transparent(45, 95, 510, 40, TRANSPARENT_NOIR)  # Dessiner le fond de la barre de progression
-    pygame.draw.rect(fenetre, VERT, (50, 100, 500 * progression, 30))  # Dessiner la barre verte de progression
-    pygame.draw.line(fenetre, BLEU, (50 + 500 * (objectif / 100), 100), (50 + 500 * (objectif / 100), 130), 5)  # Indicateur de l'objectif
+    dessiner_fond_transparent(45, 95, 510, 40, TRANSPARENT_NOIR)
+
+    # Calcul des seuils
+    seuil_objectif = objectif / 100.0
+
+    if progression <= seuil_objectif:
+        # De bleu (0,0,255) à vert (0,255,0)
+        t = progression / seuil_objectif if seuil_objectif > 0 else 0
+        r = 0
+        g = int(255 * t)
+        b = int(255 * (1 - t))
+    else:
+        # De vert (0,255,0) à rouge (255,0,0)
+        t = (progression - seuil_objectif) / (1 - seuil_objectif) if seuil_objectif < 1 else 0
+        r = int(255 * t)
+        g = int(255 * (1 - t))
+        b = 0
+
+    couleur_barre = (r, g, b)
+
+    # Dessiner la barre de progression colorée
+    pygame.draw.rect(fenetre, couleur_barre, (50, 100, 500 * progression, 30))
+
+    # Dessiner la ligne de l'objectif en bleu
+    pygame.draw.line(fenetre, BLEU, (50 + 500 * (objectif / 100), 100), (50 + 500 * (objectif / 100), 130), 5)
+
 
 # Boucle principale du jeu
 running = True
@@ -143,7 +166,7 @@ while running:
             # Lancer l'animation de transition du trialiste vers le bloc validé
             trial.depart_animation(blocs[-2])
 
-        elif abs(progression * 100 - blocs[-1].objectif) > 1.5:
+        elif progression * 100 < blocs[-1].objectif - 1.5:
             # Sauvegarder la position actuelle du fond
             current_x_fond = x_fond
 
@@ -193,6 +216,81 @@ while running:
             trial.bloc_vise = None
             trial.texture = pygame.transform.scale(pygame.image.load('trial.png'), (100, 100))
             trial.texture_originale = trial.texture.copy()
+
+        else:
+            current_x_fond = x_fond
+            trial.rotation()
+
+            # Attendre que la rotation soit terminée
+            while trial.en_rotation:
+                trial.update()
+                fenetre.blit(fond, (current_x_fond, 0))
+                fenetre.blit(fond, (current_x_fond + fond.get_width(), 0))
+                for bloc in blocs:
+                    bloc.dessine(fenetre)
+                trial.dessine(fenetre, 200)
+                pygame.display.flip()
+                pygame.time.Clock().tick(60)
+
+            # Changer texture pour "decole.png"
+            trial.texture = pygame.transform.scale(pygame.image.load('decole.png'), (100, 100))
+            trial.texture_originale = trial.texture.copy()
+
+            # Animation de montée
+            y = trial.y
+            while y > -trial.texture.get_height():
+                fenetre.blit(fond, (current_x_fond, 0))
+                fenetre.blit(fond, (current_x_fond + fond.get_width(), 0))
+                for bloc in blocs:
+                    bloc.dessine(fenetre)
+                fenetre.blit(trial.texture, (200, y))
+                pygame.display.flip()
+                pygame.time.Clock().tick(60)
+                y -= 7
+
+            # Affichage du game over comme pour le crash
+            overlay = pygame.Surface((longueur_fenetre, largeur_fenetre), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 150))
+            fenetre.blit(overlay, (0, 0))
+
+            try:
+                font_large = pygame.font.Font("Police.ttf", 40)
+                font_small = pygame.font.Font("Police.ttf", 10)
+            except:
+                font_large = pygame.font.SysFont("Arial", 40)
+                font_small = pygame.font.SysFont("Arial", 10)
+
+            game_over_text = font_large.render("GAME OVER", True, (255, 0, 0))
+            restart_text = font_small.render("APPUYER SUR UNE TOUCHE POUR RECOMMENCER", True, (255, 255, 255))
+
+            fenetre.blit(game_over_text, (longueur_fenetre//2 - game_over_text.get_width()//2,
+                                        largeur_fenetre//2 - 50))
+            fenetre.blit(restart_text, (longueur_fenetre//2 - restart_text.get_width()//2,
+                                    largeur_fenetre//2 + 40))
+            pygame.display.flip()
+
+            # Attente d'une touche
+            waiting = True
+            while waiting:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+                    if event.type == pygame.KEYDOWN:
+                        waiting = False
+
+            # Réinitialisation
+            score = 0
+            blocs = [Bloc(random.randint(20, 80), 400)]
+            progression = 0.0
+            trial.y = trial.y_initial
+            trial.etat_animation = "inactif"
+            trial.bloc_vise = None
+            trial.texture = pygame.transform.scale(pygame.image.load('trial.png'), (100, 100))
+            trial.texture_originale = trial.texture.copy()
+
+
+
 
         confirmation = False  # Réinitialiser la confirmation
 

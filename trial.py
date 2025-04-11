@@ -193,3 +193,5 @@ class Trial:
         screen.blit(self.texture, (x_depart + distance, self.y))
 
         return True  # Toujours un game over
+
+
