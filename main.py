@@ -30,7 +30,7 @@ TRANSPARENT_NOIR = (0, 0, 0, 150) # Noir avec une certaine transparence
 fond = pygame.image.load('fond.png')
 
 # Chargement de l'image de trial et mise à la bonne taille
-trial_texture = pygame.transform.scale(pygame.image.load('trial.png'), (100, 100)) 
+trial_texture = pygame.transform.scale(pygame.image.load('trial.png'), (100, 100))
 trial = Trial(largeur_fenetre - 119, trial_texture) # Liaison avec la classe Trial
 
 # Variables principales
@@ -107,25 +107,55 @@ while running:
             new_block.entree = True  # Le nouveau bloc entre dans la fenetre
             blocs.append(new_block)  # Ajouter le bloc à la liste
 
-            animation = True  # Lancer l'animation
+            trial.rotation()
+            fond_rotation_x = x_fond  # garder la position actuelle du fond
+
+            while trial.en_rotation:
+                # 1. Redessiner le fond à la bonne position
+                fenetre.blit(fond, (fond_rotation_x, 0))
+                fenetre.blit(fond, (fond_rotation_x + fond.get_width(), 0))
+
+                # 2. Redessiner les blocs
+                for bloc in blocs:
+                    bloc.dessine(fenetre)
+
+                # 3. Mettre à jour et dessiner le trial
+                trial.update()
+                trial.dessine(fenetre, 200)
+
+                # 4. Afficher
+                pygame.display.flip()
+                pygame.time.Clock().tick(60)
+            pygame.display.flip()  # Forcer l'affichage de la rotation
+
+            animation = True  # Ensuite seulement on lance l'animation
+            animation_timer = time.time()
+
+            # Lancer l'animation de transition du trialiste vers le bloc validé
+            trial.depart_animation(blocs[-2])
+
             animation_timer = time.time()  # Enregistrer le temps de début de l'animation
 
             # Lancer l'animation de transition du trialiste vers le bloc validé
             trial.depart_animation(blocs[-2])
 
-        else: #si la progression est trop éloignée de l'objectif
-            dessiner_texte("GAME OVER", 200, 200, ROUGE, 50)  # Afficher "GAME OVER"
-            pygame.display.flip()
-            score = 0  # Réinitialiser le score
-            time.sleep(2)  # Attendre 2 secondes
+        elif abs(progression * 100 - blocs[-1].objectif) > 1.5: #si la progression est trop inferieur à l'objectif
+            trial_texture = pygame.transform.scale(pygame.image.load('crash.png'), (100, 100))
+            # Passer x_fond à la méthode crash
+            trial.crash(fenetre, 200, fond, blocs, score, x_fond)
+            trial.dessine(fenetre, 320)
+            score = 0
+            time.sleep(2)
 
             # Réinitialiser les blocs et autres variables pour recommencer
             blocs = [Bloc(random.randint(20, 80), 400)]
-            x_fond = 0
             progression = 0.0
             trial.y = trial.y_initial
             trial.etat_animation = "inactif"
             trial.bloc_vise = None
+            # Réinitialiser la texture du trial
+            trial.texture = pygame.transform.scale(pygame.image.load('trial.png'), (100, 100))
+            trial.texture_originale = trial.texture.copy()
 
         confirmation = False  # Réinitialiser la confirmation
 
