@@ -77,6 +77,8 @@ class Trial:
         # Position cible au-dessus du bloc visé
         y_vise = self.bloc_vise.y - self.texture.get_height()
 
+        son_immobile = True
+
         if self.etat_animation == "montee":
             if temps_ecoule < self.duree_montee:
                 # Animation de montée (linéaire ou easing)
@@ -89,14 +91,19 @@ class Trial:
                 self.depart_anim = time.time()
 
         elif self.etat_animation == "immobile":
+            if son_immobile == True:
+                son=pygame.mixer.Sound("sounds/moyeux.mp3")
+                son.play()
             if temps_ecoule < self.duree_immobile:
                 # On reste immobile pendant un certain temps
                 self.y = y_vise
+                son_immobile=False
             else:
                 # Début de la descente
                 self.etat_animation = "descente"
                 self.depart_anim = time.time()
-
+                son_immobile=True
+            
         elif self.etat_animation == "descente":
             if temps_ecoule < self.duree_descente:
                 # Animation de descente (linéaire ou easing)
@@ -181,8 +188,10 @@ class Trial:
             pygame.display.flip()
             clock.tick(60)
 
+        self.sound = pygame.mixer.Sound("sounds/bone_crack.mp3")
+
         # Mettre à jour la texture crash
-        self.texture = pygame.transform.scale(pygame.image.load('crash.png'), (100, 100))
+        self.texture = pygame.transform.scale(pygame.image.load('textures/crash.png'), (100, 100))
         self.texture_originale = self.texture.copy()
 
         # Dernier affichage avec tous les éléments
@@ -190,6 +199,7 @@ class Trial:
         screen.blit(background, (x_fond + background.get_width(), 0))
         for bloc in liste_blocs:
             bloc.dessine(screen)
+        self.sound.play()
         screen.blit(self.texture, (x_depart + distance, self.y))
 
         return True  # Toujours un game over

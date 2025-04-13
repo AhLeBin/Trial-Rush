@@ -4,9 +4,17 @@ import time
 import sqlite3
 from block import Bloc
 from trial import Trial
+from random import randint
 
 # Initialisation de Pygame
 pygame.init()
+
+# Initialisation du mixer
+pygame.mixer.init()
+
+# Chargement de la musique et des sons
+musique = pygame.mixer.Sound("sounds/musique.mp3")
+scream = pygame.mixer.Sound("sounds/scream.mp3")
 
 # Connexion à la base de données SQLite
 connexion = sqlite3.connect('data.db')
@@ -27,10 +35,10 @@ BLEU = (0, 0, 255)
 TRANSPARENT_NOIR = (0, 0, 0, 150) # Noir avec une certaine transparence
 
 # Chargement de l'image de fond
-fond = pygame.image.load('fond.png')
+fond = pygame.image.load('textures/fond.png')
 
 # Chargement de l'image de trial et mise à la bonne taille
-trial_texture = pygame.transform.scale(pygame.image.load('trial.png'), (100, 100))
+trial_texture = pygame.transform.scale(pygame.image.load('textures/trial.png'), (100, 100))
 trial = Trial(largeur_fenetre - 119, trial_texture) # Liaison avec la classe Trial
 
 # Variables principales
@@ -87,9 +95,22 @@ def dessiner_barre_progression(progression, objectif):
     # Dessiner la barre de progression colorée
     pygame.draw.rect(fenetre, couleur_barre, (50, 100, 500 * progression, 30))
 
+    #pour les trois premieres manches
+    if score<=3:
     # Dessiner la ligne de l'objectif en bleu
-    pygame.draw.line(fenetre, BLEU, (50 + 500 * (objectif / 100), 100), (50 + 500 * (objectif / 100), 130), 5)
+        pygame.draw.line(fenetre, BLEU, (50 + 500 * (objectif / 100), 100), (50 + 500 * (objectif / 100), 130), 5)
 
+
+def son_cabrage_aleatoire():
+    numero = randint(1, 5)
+    chemin_fichier = f"sounds/cabre{numero}.mp3"
+    cabre = pygame.mixer.Sound(chemin_fichier)
+    cabre.play()
+
+# Réglage du volume 
+musique.set_volume(0.3)
+# Lecture en boucle infinie de la musique
+musique.play(loops=-1)
 
 # Boucle principale du jeu
 running = True
@@ -122,8 +143,8 @@ while running:
 
     # Validation de la progression
     if confirmation:
-        if abs(progression * 100 - blocs[-1].objectif) <= 1.5:  # Vérifie si la différence entre la progression et l'objectif est inférieure ou égale à 1.5
-            dessiner_texte("VALIDE!", 200, 200, VERT)  # Affiche "VALIDE!" si la progression est proche de l'objectif
+        if abs(progression * 100 - blocs[-1].objectif) <= 3:  # Vérifie si la différence entre la progression et l'objectif est inférieure ou égale à 1.5
+            #dessiner_texte("VALIDE!", 200, 200, VERT)  # Affiche "VALIDE!" si la progression est proche de l'objectif
             score += 1  # Augmenter le score
             progression = 0.0  # Réinitialiser la progression de la barre
             pygame.display.flip()
@@ -135,6 +156,7 @@ while running:
             blocs.append(new_block)  # Ajouter le bloc à la liste
 
             trial.rotation()
+            son_cabrage_aleatoire()
             fond_rotation_x = x_fond  # garder la position actuelle du fond
 
             while trial.en_rotation:
@@ -166,10 +188,11 @@ while running:
             # Lancer l'animation de transition du trialiste vers le bloc validé
             trial.depart_animation(blocs[-2])
 
-        elif progression * 100 < blocs[-1].objectif - 1.5:
+        elif progression * 100 < blocs[-1].objectif - 3:
             # Sauvegarder la position actuelle du fond
             current_x_fond = x_fond
 
+            scream.play()
             # Exécuter l'animation de crash
             trial.crash(fenetre, 200, fond, blocs, score, current_x_fond)
 
@@ -214,12 +237,13 @@ while running:
             trial.y = trial.y_initial
             trial.etat_animation = "inactif"
             trial.bloc_vise = None
-            trial.texture = pygame.transform.scale(pygame.image.load('trial.png'), (100, 100))
+            trial.texture = pygame.transform.scale(pygame.image.load('textures/trial.png'), (100, 100))
             trial.texture_originale = trial.texture.copy()
 
         else:
             current_x_fond = x_fond
             trial.rotation()
+            son_cabrage_aleatoire()
 
             # Attendre que la rotation soit terminée
             while trial.en_rotation:
@@ -233,11 +257,12 @@ while running:
                 pygame.time.Clock().tick(60)
 
             # Changer texture pour "decole.png"
-            trial.texture = pygame.transform.scale(pygame.image.load('decole.png'), (100, 100))
+            trial.texture = pygame.transform.scale(pygame.image.load('textures/decole.png'), (100, 100))
             trial.texture_originale = trial.texture.copy()
 
             # Animation de montée
             y = trial.y
+            scream.play()
             while y > -trial.texture.get_height():
                 fenetre.blit(fond, (current_x_fond, 0))
                 fenetre.blit(fond, (current_x_fond + fond.get_width(), 0))
@@ -286,7 +311,7 @@ while running:
             trial.y = trial.y_initial
             trial.etat_animation = "inactif"
             trial.bloc_vise = None
-            trial.texture = pygame.transform.scale(pygame.image.load('trial.png'), (100, 100))
+            trial.texture = pygame.transform.scale(pygame.image.load('textures/trial.png'), (100, 100))
             trial.texture_originale = trial.texture.copy()
 
 
@@ -324,5 +349,6 @@ while running:
     pygame.display.flip()
     pygame.time.Clock().tick(60)  # Limiter le nombre de frames par seconde à 60
 
-# Quitter Pygame à la fin du jeu
+# Quitter Pygame à la fin du jeuet arréter la musique
+musique.stop()
 pygame.quit()

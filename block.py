@@ -5,7 +5,7 @@ largeur_fenetre = 400  # Largeur de la fenêtre de jeu
 taille_texture = 50  # Taille de chaque tuile de texture (ici, chaque "brique" de roche)
 
 # Chargement et redimensionnement de la texture roche
-texture_roche = pygame.image.load('roche.jpg')  # Chargement de l'image de la texture de roche
+texture_roche = pygame.image.load('textures/roche.jpg')  # Chargement de l'image de la texture de roche
 texture_roche = pygame.transform.scale(texture_roche, (taille_texture, taille_texture))  # Redimensionner la texture pour qu'elle ait la taille spécifiée
 
 class Bloc:
